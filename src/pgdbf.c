@@ -31,7 +31,7 @@
 
 #include "pgdbf.h"
 
-#define STANDARDOPTS "cCdDeEhm:nNpPqQtTuU"
+#define STANDARDOPTS "cCdDeEhm:i:nNpPqQtTuU"
 
 int main(int argc, char **argv) {
     /* Describing the DBF file */
@@ -115,6 +115,9 @@ int main(int argc, char **argv) {
     int isuniquename;
     char basename[MAXCOLUMNNAMESIZE];
     int serial;
+    
+    /* Table name from command */
+    char *userdefinedtablename = NULL;
 
 #if defined(HAVE_ICONV)
     /* Character encoding stuff */
@@ -170,6 +173,9 @@ int main(int argc, char **argv) {
             break;
         case 'q':
             optusequotedtablename = 1;
+            break;
+	case 'i':
+            userdefinedtablename = optarg;
             break;
         case 'Q':
             optusequotedtablename = 0;
@@ -231,6 +237,7 @@ int main(int argc, char **argv) {
                "  -P  do not show a progress bar\n"
                "  -q  enclose the table name in quotation marks whenever used in statements\n"
                "  -Q  do not enclose the table name in quotation marks (default)\n"
+               "  -i  set output table name\n"
 #if defined(HAVE_ICONV)
                "  -s  the encoding used in the file, to be converted to UTF-8\n"
 #endif
@@ -288,7 +295,11 @@ int main(int argc, char **argv) {
      * is used for other things, like creating the names of indexes. Despite
      * its name, baretablename may be surrounded by quote marks if the "-q"
      * option for optusequotedtablename is given. */
-    baretablename = malloc(strlen(dbffilename) + 1 + optusequotedtablename * 2);
+    if (userdefinedtablename == NULL) {
+        baretablename = malloc(strlen(dbffilename) + 1 + optusequotedtablename * 2);
+    } else {
+        baretablename = malloc(strlen(userdefinedtablename) + 1 + optusequotedtablename * 2);
+    }
     if(baretablename == NULL) {
         exitwitherror("Unable to allocate the bare tablename buffer", 1);
     }
@@ -301,6 +312,11 @@ int main(int argc, char **argv) {
             break;
         }
     }
+
+    if (userdefinedtablename != NULL) {
+	s = userdefinedtablename;
+    }
+
     /* Create tablename and baretablename at the same time. */
     t = tablename;
     u = baretablename;
@@ -316,7 +332,7 @@ int main(int argc, char **argv) {
     if(optusequotedtablename) *u++ = '"';
     *t = '\0';
     *u = '\0';
-
+    
     /* Get the DBF header */
     dbffile = fopen(dbffilename, "rb");
     if(dbffile == NULL) {
