@@ -31,7 +31,7 @@
 
 #include "pgdbf.h"
 
-#define STANDARDOPTS "cCdDeEhm:i:nNpPqQtTuU"
+#define STANDARDOPTS "cCdDeEhm:i:nk:NpPqQtTuU"
 
 int main(int argc, char **argv) {
     /* Describing the DBF file */
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     int     optusequotedtablename = 0;
     int     optusetransaction = 1;
     int     optusetruncatetable = 0;
-
+    int     optgenerateprimarykey = 0;
     /* Describing the PostgreSQL table */
     char *tablename;
     char *baretablename;
@@ -177,6 +177,10 @@ int main(int argc, char **argv) {
 	case 'i':
             userdefinedtablename = optarg;
             break;
+        case 'k':
+            optgenerateprimarykey = optarg;
+            break;
+
         case 'Q':
             optusequotedtablename = 0;
             break;
@@ -238,6 +242,7 @@ int main(int argc, char **argv) {
                "  -q  enclose the table name in quotation marks whenever used in statements\n"
                "  -Q  do not enclose the table name in quotation marks (default)\n"
                "  -i  set output table name\n"
+               "  -k  generate autoincrement primary key. Parameter value is start of primary key sequence\n"
 #if defined(HAVE_ICONV)
                "  -s  the encoding used in the file, to be converted to UTF-8\n"
 #endif
@@ -648,12 +653,17 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Progress: 0");
         fflush(stderr);
     }
+    int primary_key = 0;
+    if (optgenerateprimarykey) { 
+        primary_key = atoi(optgenerateprimarykey);
+    }
     for(recordbase = 0; recordbase < littleint32_t(dbfheader.recordcount); recordbase += dbfbatchsize) {
         blocksread = fread(inputbuffer, littleint16_t(dbfheader.recordlength), dbfbatchsize, dbffile);
         if(blocksread != dbfbatchsize &&
            recordbase + blocksread < littleint32_t(dbfheader.recordcount)) {
             exitwitherror("Unable to read an entire record", 1);
         }
+	
         for(batchindex = 0; batchindex < blocksread; batchindex++) {
             bufoffset = inputbuffer + littleint16_t(dbfheader.recordlength) * batchindex;
             /* Skip deleted records */
@@ -661,11 +671,14 @@ int main(int argc, char **argv) {
                 continue;
             }
             bufoffset++;
+            if (primary_key) {
+                printf("%d", primary_key);
+            }
             for(fieldnum = 0; fieldnum < fieldcount; fieldnum++) {
                 if(fields[fieldnum].type == '0') {
                     continue;
                 }
-                if(fieldnum) {
+                if(fieldnum || primary_key) {
                     printf("\t");
                 }
                 switch(fields[fieldnum].type) {
@@ -795,6 +808,9 @@ int main(int argc, char **argv) {
                 bufoffset += fields[fieldnum].length;
             }
             printf("\n");
+            if (primary_key) {
+                primary_key++;
+            }
         }
         if(optshowprogress) {
             updateprogressbar(100 * (recordbase + blocksread) / littleint32_t(dbfheader.recordcount));
