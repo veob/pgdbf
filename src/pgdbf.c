@@ -291,7 +291,11 @@ int main(int argc, char **argv) {
 
     /* Calculate the table's name based on the DBF filename */
     dbffilename = argv[optind];
-    tablename = malloc(strlen(dbffilename) + 1);
+    if (userdefinedtablename == NULL) {
+        tablename = malloc(strlen(dbffilename) + 1);
+    } else {
+        tablename = malloc(strlen(userdefinedtablename) + 1);
+    }
     if(tablename == NULL) {
         exitwitherror("Unable to allocate the tablename buffer", 1);
     }
@@ -311,17 +315,17 @@ int main(int argc, char **argv) {
     /* Find the first character after the final slash, or the first
      * character of the filename if no slash is present, and copy from that
      * point to the period in the extension into the tablename string. */
-    for(s = dbffilename + strlen(dbffilename) - 1; s != dbffilename; s--) {
-        if(*s == '/') {
-            s++;
-            break;
+    if (userdefinedtablename != NULL) {
+        s = userdefinedtablename;
+    } else {
+        for(s = dbffilename + strlen(dbffilename) - 1; s != dbffilename; s--) {
+            if(*s == '/') {
+                s++;
+                break;
+            }
         }
     }
-
-    if (userdefinedtablename != NULL) {
-	s = userdefinedtablename;
-    }
-
+    
     /* Create tablename and baretablename at the same time. */
     t = tablename;
     u = baretablename;
@@ -337,7 +341,7 @@ int main(int argc, char **argv) {
     if(optusequotedtablename) *u++ = '"';
     *t = '\0';
     *u = '\0';
-    
+   
     /* Get the DBF header */
     dbffile = fopen(dbffilename, "rb");
     if(dbffile == NULL) {
