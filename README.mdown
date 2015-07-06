@@ -71,9 +71,11 @@ Note that the entire process is usually wrapped inside a transaction so that oth
 
 ## Command Line
 
-    Usage: pgdbf [-cCdDeEhtTuU] [-s encoding] [-m memofilename] filename [indexcolumn ...]
+    Usage: pgdbf [-cCdDeEhtTuU] [-i tablename] [-s encoding] [-m memofilename] filename [indexcolumn ...]
 
 The only required argument is the filename of the table to be converted.  If the table has a memo field, then use the "-m" option to specify the path to the memo file.
+
+The "-i" flag sets tablename. If not specified then tablename will be same as .dbf file name
 
 The "-h" flag prints this usage information and then exits.
 
