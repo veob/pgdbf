@@ -617,7 +617,7 @@ int main(int argc, char **argv) {
             if(optusecreatetable) printf("TIMESTAMP");
             break;
         case 'Y':
-            if(optusecreatetable) printf("DECIMAL(4)");
+            if(optusecreatetable) printf("DECIMAL(20,4)");
             break;
         default:
             if(optusecreatetable) printf("\n");
@@ -745,7 +745,7 @@ int main(int argc, char **argv) {
                         memoblocknumber = 0;
                         s = bufoffset;
                         for(i = 0; i < 10; i++) {
-                            if(*s != 32) {
+                            if(*s && *s != 32) {
                                 /* I'm unaware of any non-ASCII
                                  * implementation of XBase. */
                                 memoblocknumber = memoblocknumber * 10 + *s - '0';
